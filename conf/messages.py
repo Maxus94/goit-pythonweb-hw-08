@@ -1,0 +1,6 @@
+contact_schema_first_name = "First name"
+contact_schema_last_name = "Last name"
+contact_schema_email = "Email"
+contact_schema_phone_number = "Phone number"
+contact_schema_info = "Info"
+contact_schema_birthday = "Birthday"

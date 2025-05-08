@@ -1,10 +1,11 @@
 from typing import List
+from fastapi import Query
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Contact
-from schemas import ContactModel
+from schemas import ContactModel, UpdateContact
 
 
 class ContactRepository:
@@ -21,6 +22,27 @@ class ContactRepository:
         contact = await self.db.execute(stmt)
         return contact.scalar_one_or_none()
 
+    async def get_contacts_by(
+        self, search_first_name: str, search_last_name: str, search_email: str
+    ) -> List[Contact] | None:
+        stmt = select(Contact).where(
+            Contact.first_name.ilike(f"%{search_first_name}%"),
+            Contact.last_name.ilike(f"%{search_last_name}%"),
+            Contact.email.ilike(f"%{search_email}%"),
+        )
+        contacts = await self.db.execute(stmt)
+        return contacts.scalars().all()
+
+    async def get_upcoming_birthdays(self, cur_date) -> List[Contact]:
+        # stmt = select(Contact).filter(int((Contact.birthday - cur_date).days) <= 7)
+        stmt = select(Contact)
+        contacts = await self.db.execute(stmt)
+
+        for contact in contacts:
+            print(contact.email)
+
+        return contacts.scalars().all()
+
     async def create_contact(self, body: ContactModel) -> Contact:
         contact = Contact(**body.model_dump(exclude_unset=True))
         self.db.add(contact)
@@ -29,18 +51,13 @@ class ContactRepository:
         return contact
 
     async def update_contact(
-        self, contact_id: int, body: ContactModel
+        self, contact_id: int, body: UpdateContact
     ) -> Contact | None:
-        contact = await self.get_tag_by_id(contact_id)
-        if contact:
-            contact.first_name = body.first_name
-            contact.second_name = body.second_name
-            contact.email = body.email
-            contact.phone_number = body.phone_number
-            contact.birthday = body.birthday
-            contact.info = body.info
-            await self.db.commit()
-            await self.db.refresh(contact)
+        contact = await self.get_contact_by_id(contact_id)
+
+        update_data = body.model_dump(exclude_unset=True)
+        for key, val in update_data.items():
+            setattr(contact, key, val)
         return contact
 
     async def remove_contact(self, contact_id: int) -> Contact | None:

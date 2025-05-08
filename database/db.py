@@ -1,4 +1,5 @@
 import contextlib
+import logging
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
@@ -8,6 +9,8 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from conf.config import config
+
+logger = logging.getLogger("uvicorn.error")
 
 
 class DatabaseSessionManager:
@@ -25,6 +28,11 @@ class DatabaseSessionManager:
         try:
             yield session
         except SQLAlchemyError as e:
+            logger.error(f"Database error: {e}")
+            await session.rollback()
+            raise  # Re-raise the original error
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}", exc_info=True)
             await session.rollback()
             raise  # Re-raise the original error
         finally:
