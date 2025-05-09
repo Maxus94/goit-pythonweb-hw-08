@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import Query
+from datetime import date, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Contact
 from schemas import ContactModel, UpdateContact
+from conf.constants import NEXT_DAYS
 
 
 class ContactRepository:
@@ -33,14 +34,26 @@ class ContactRepository:
         contacts = await self.db.execute(stmt)
         return contacts.scalars().all()
 
-    async def get_upcoming_birthdays(self, cur_date) -> List[Contact]:
-        # stmt = select(Contact).filter(int((Contact.birthday - cur_date).days) <= 7)
+    async def get_upcoming_birthdays(self) -> List[Contact]:
+        cur_date = date.today()
+        next_dates = [
+            (
+                (cur_date + timedelta(i + 1)).month,
+                (cur_date + timedelta(i + 1)).day,
+            )
+            for i in range(NEXT_DAYS)
+        ]
+
         stmt = select(Contact)
         contacts = await self.db.execute(stmt)
 
-        for contact in contacts:
-            print(contact.email)
+        contact_ids = []
 
+        for contact in contacts.scalars():
+            if (contact.birthday.month, contact.birthday.day) in next_dates:
+                contact_ids.append(contact.id)
+        stmt = select(Contact).where(Contact.id.in_(contact_ids))
+        contacts = await self.db.execute(stmt)
         return contacts.scalars().all()
 
     async def create_contact(self, body: ContactModel) -> Contact:

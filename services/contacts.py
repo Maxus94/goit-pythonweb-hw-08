@@ -30,8 +30,8 @@ class ContactService:
     async def get_contact(self, contact_id: int):
         return await self.repository.get_contact_by_id(contact_id)
 
-    async def get_upcoming_birthdays(self, cur_date):
-        return await self.repository.get_upcoming_birthdays(cur_date)
+    async def get_upcoming_birthdays(self):
+        return await self.repository.get_upcoming_birthdays()
 
     async def update_contact(self, contact_id: int, body: ContactModel):
         return await self.repository.update_contact(contact_id, body)

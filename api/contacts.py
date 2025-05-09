@@ -1,7 +1,6 @@
 import logging
 
 from typing import List
-from datetime import date
 
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,7 +33,7 @@ async def read_contacts(
 async def read_conact(contact_id: int, db: AsyncSession = Depends(get_db)):
     contact_service = ContactService(db)
     contact = await contact_service.get_contact(contact_id)
-    print(contact)
+
     if contact is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Contact not found"
@@ -61,11 +60,8 @@ async def search_contacts(
 async def get_upcoming_birthdays(
     db: AsyncSession = Depends(get_db),
 ):
-    cur_date = date.today()
-    print(cur_date)
-
     contact_service = ContactService(db)
-    contacts = await contact_service.get_upcoming_birthdays(cur_date)
+    contacts = await contact_service.get_upcoming_birthdays()
 
     return contacts
 
